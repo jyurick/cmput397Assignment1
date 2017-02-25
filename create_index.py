@@ -5,22 +5,12 @@ from nltk.corpus import stopwords
 import string
 import time
 import math
+import sys
 
 conn = sqlite3.connect('movies.sql')
-stmt = "DROP TABLE IF EXISTS TERMS"
-conn.execute(stmt)
 stmt = "DROP TABLE IF EXISTS LISTINGS"
 conn.execute(stmt)
-stmt = "DROP TABLE IF EXISTS DOCUMENTS"
-conn.execute(stmt)
 
-stmt = 	"""
-		CREATE TABLE TERMS (
-			TERM 	VARCHAR(100),
-			PRIMARY KEY (TERM) ON CONFLICT IGNORE
-		)
-		"""
-conn.execute(stmt)
 
 stmt = 	"""
 		CREATE TABLE LISTINGS (
@@ -37,7 +27,8 @@ conn.execute(stmt)
 
 
 def load_document_names():
-	os.chdir(os.getcwd() + "/cmput397_2k_movies")
+	directory = "/" + sys.argv[1]
+	os.chdir(os.getcwd() + directory)
 	print(os.getcwd())
 	start_time = time.time()
 
@@ -45,15 +36,15 @@ def load_document_names():
 	N = len(fileNames)
 	wordPositions = dict()
 	postings = dict()
-
-	
 	
 	for fileName in fileNames:
 		position = 0
 		wordPositions = dict()
 		File = open(fileName, 'r')
+
 		for line in File.readlines():
 			tokens = word_tokenize(line)
+
 			for t in tokens:
 				if t not in stopwords.words('english') and t not in string.punctuation and t not in ("'s", "''", '""', "``"):
 					if t not in wordPositions.keys():
@@ -63,6 +54,7 @@ def load_document_names():
 					position += 1
 
 		docID = fileName
+		#docID = fileName.split('_')[1]
 		for key in wordPositions.keys():
 			tf = len(wordPositions[key].split(','))
 			postings.setdefault(key, [0])
@@ -73,7 +65,7 @@ def load_document_names():
 
 	for key in postings.keys():
 		df = postings[key][0]
-		idf = max(math.log10(N/df),0)
+		idf = math.log10(N/df)
 		for x in range(1, len(postings[key])):
 			p = (key, postings[key][x][0], postings[key][x][1], postings[key][x][2], idf, 0, )
 			conn.execute("INSERT INTO LISTINGS VALUES(?,?,?,?,?,?)", p)
