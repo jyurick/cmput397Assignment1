@@ -12,24 +12,7 @@ db_name = "movies.sql"
 conn = sqlite3.connect(db_name)
 
 
-def andOperation(pList1, pList2):
-	postings = list()
-	x = 0
-	y = 0
 
-	while x < len(pList1) and y < len(pList2):
-		if pList1[x] > pList2[y]:
-			y += 1
-
-		elif pList1[x] < pList2[y]:
-			x += 1
-
-		else:
-			postings.append(pList1[x])
-			x += 1
-			y += 1
-
-	return postings
 
 def orOperation(pList1, pList2):
 	postings = list()
@@ -62,13 +45,103 @@ def orOperation(pList1, pList2):
 
 	return postings
 
+def andOperation(pList1, pList2):
+	postings = list()
+	x = 0
+	y = 0
+
+	while x < len(pList1) and y < len(pList2):
+		if pList1[x] > pList2[y]:
+			y += 1
+
+		elif pList1[x] < pList2[y]:
+			x += 1
+
+		else:
+			postings.append(pList1[x])
+			x += 1
+			y += 1
+
+	return postings
+
+def positionOperation(t1List, t2List):
+	postings = list()
+	x = 0
+	y = 0
+
+	while x < len(t1List) and y < len(t2List):
+		if t1List[x][0] > t2List[y][0]:
+			y += 1
+
+		elif t1List[x][0] < t2List[y][0]:
+			x += 1
+
+		else:
+			t1Positions = t1List[x][1].split(',')
+			t2Positions = t2List[y][1].split(',')
+			for a in range(len(t1Positions)):
+				t1Positions[a] = int(t1Positions[a])
+
+			for b in range(len(t2Positions)):
+				t2Positions[b] = int(t2Positions[b])
+
+			togetherFound = False
+			a = 0
+			b = 0
+			while a < len(t1Positions) and b < len(t2Positions) and togetherFound == False:
+				if t1Positions[a] + 1 < t2Positions[b]:
+					a += 1
+				elif t1Positions[a] + 1 > t2Positions[b]:
+					b += 1
+				else:
+					togetherFound = True
+					postings.append(t1List[x][0])
+
+			x += 1
+			y += 1
+
+	return postings
+
+
+
 def lookupPhrase(phrase):
-	pass
+	phrase.replace('"', '')
+	termDocPositions = dict()
+	docIds = list()
+	terms = phrase.split('_')
+	for x in range(len(terms)):
+		terms[x] = terms[x].lower()
+
+	for term in terms:
+		termDocPositions.setdefault(term, [])
+		stmt = "SELECT DOCID, POSITIONS FROM LISTINGS WHERE TERM = ? ORDER BY DOCID ASC"
+		p = (term, )
+		curs = conn.execute(stmt, p)
+		for row in curs:
+			docid = row[0]
+			positions = row[1]
+			termDocPositions[term].append((docid,positions))
+
+	x = 0
+	while x < len(terms) - 1:
+		positionalAND = positionOperation(termDocPositions[terms[x]], termDocPositions[terms[x+1]])
+		if x == 0:
+			docIds = positionalAND
+		else:
+			docIds = andOperation(docIds, positionalAND)
+		x += 1
+
+	return docIds
+
+	
+
+
 	
 
 def lookupPostings(term):
 	if term.count('"') == 2:
-		return lookupPhrase(term)
+		print("Going into lookupPhrase")
+		return lookupPhrase(term[1:-1])
 	#Returns a list of document ids that contain the term
 	stmt = "SELECT DOCID FROM LISTINGS WHERE TERM = ? ORDER BY DOCID ASC"
 	p = (term.lower(), )
@@ -100,7 +173,7 @@ def simplify_query(query):
 			subList = simplify_query(query[x+1:y])
 			query = query[:x] + "SUB" + query[y+1:]
 			break
-	print(query)
+	#print(query)
 
 	x = 0
 	while x < len(query):
@@ -112,7 +185,7 @@ def simplify_query(query):
 				x += 1
 		x += 1
 
-	print(query)
+	#print(query)
 	queryList = query.split()
 	simpleQuery = list()
 	for x in range(len(queryList)):
@@ -123,7 +196,7 @@ def simplify_query(query):
 				simpleQuery.append(lookupPostings(queryList[x]))
 		else:
 			simpleQuery.append(queryList[x])
-	print(simpleQuery)
+	#print(simpleQuery)
 	while len(simpleQuery) >= 3:
 		copy = list()
 		length = len(simpleQuery)
@@ -142,8 +215,10 @@ def simplify_query(query):
 
 
 if __name__ == "__main__":
-	print(simplify_query('"stemming should" OR "stemming increases"'))
+	print(simplify_query('"stemming never" AND "stemming increases"'))
 	#print(orOperation([1],[1,4,6,8, 9, 10, 11 ,12]))
+	#print(lookupPhrase("stemming_should"))
+	#print(simplify_query('stemming AND should'))
 
 conn.close()
 

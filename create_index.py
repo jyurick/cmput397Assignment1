@@ -44,14 +44,17 @@ def load_document_names():
 
 		for line in File.readlines():
 			tokens = word_tokenize(line)
+			for x in range(len(tokens)):
+				tokens[x] = tokens[x].lower()
 
 			for t in tokens:
-				if t not in stopwords.words('english') and t not in string.punctuation and t not in ("'s", "''", '""', "``"):
+				position += 1
+				if t not in string.punctuation and t not in ("'s", "''", '""', "``"):
 					if t not in wordPositions.keys():
 						wordPositions[t.lower()] = str(position)
 					else:
 						wordPositions[t.lower()] += ","+str(position)
-					position += 1
+					
 
 		docID = fileName
 		#docID = fileName.split('_')[1]
@@ -60,6 +63,7 @@ def load_document_names():
 			postings.setdefault(key, [0])
 			postings[key][0] += tf
 			postings[key].append([docID, tf, wordPositions[key]])
+
 
 #term: [idf, [docid, tf, postings], [docid, tf, postings]]
 
