@@ -6,8 +6,8 @@ import sys
 # 	print("Requires two command line arguments. i.e python3 boolean_query.py db_filename query")
 # 	quit()
 
-# db_name = sys.argv[1]
-#query = sys.argv[1]
+db_name = sys.argv[1]
+query = sys.argv[2]
 db_name = "movies.sql"
 conn = sqlite3.connect(db_name)
 
@@ -215,7 +215,7 @@ def simplify_query(query):
 
 
 if __name__ == "__main__":
-	print(simplify_query('"stemming never" AND "stemming increases"'))
+	print(simplify_query(query))
 	#print(orOperation([1],[1,4,6,8, 9, 10, 11 ,12]))
 	#print(lookupPhrase("stemming_should"))
 	#print(simplify_query('stemming AND should'))

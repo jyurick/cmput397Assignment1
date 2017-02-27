@@ -7,7 +7,9 @@ import time
 import math
 import sys
 
-conn = sqlite3.connect('movies.sql')
+dbName = sys.argv[1]
+
+conn = sqlite3.connect(dbName)
 stmt = "DROP TABLE IF EXISTS LISTINGS"
 conn.execute(stmt)
 
@@ -27,9 +29,8 @@ conn.execute(stmt)
 
 
 def load_document_names():
-	directory = "/" + sys.argv[1]
+	directory = "/" + sys.argv[2]
 	os.chdir(os.getcwd() + directory)
-	print(os.getcwd())
 	start_time = time.time()
 
 	fileNames = list(os.listdir(os.getcwd()))
@@ -69,11 +70,13 @@ def load_document_names():
 
 	for key in postings.keys():
 		df = postings[key][0]
-		idf = math.log10(N/df)
+		idf = max(math.log10(N/df),0)
 		for x in range(1, len(postings[key])):
-			p = (key, postings[key][x][0], postings[key][x][1], postings[key][x][2], idf, 0, )
+			tf_idf = idf * postings[key][x][1]
+			p = (key, postings[key][x][0], postings[key][x][1], postings[key][x][2], idf, tf_idf, )
 			conn.execute("INSERT INTO LISTINGS VALUES(?,?,?,?,?,?)", p)
 	
+
 
 	print("Time:" + str((time.time()-start_time)/60))
 
