@@ -1,6 +1,7 @@
 # cmput397Assignment1
 This directory contains a group of python programs that are designed to create and perform
-search operations on an inverted-index file stored in an sqlite3 database.
+search operations on an inverted-index file stored in an sqlite3 database. No parts of the 
+starter code was used, merely referenced. 
 
 1. create_index.py:
 *****************************************************************************************************
